@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Exploring Model Fusion with Optimal Transport on Transformers.iml" filepath="$PROJECT_DIR$/.idea/Exploring Model Fusion with Optimal Transport on Transformers.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../Semester project/.idea/fatigue_modeling.iml" filepath="$PROJECT_DIR$/../../Semester project/.idea/fatigue_modeling.iml" />
     </modules>
   </component>
 </project>
