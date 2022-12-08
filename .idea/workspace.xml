@@ -5,10 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="716f67f0-f85e-4379-b52d-4415fde554de" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/Exploring Model Fusion with Optimal Transport on Transformers.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Exploring Model Fusion with Optimal Transport on Transformers.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Models/modelA" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Models/modelB" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/model_fusion.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/model_fusion.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Semester project/CNN.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../../Semester project/CNN.ipynb" afterDir="false" />
     </list>
