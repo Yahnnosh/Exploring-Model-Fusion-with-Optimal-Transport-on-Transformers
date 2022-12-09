@@ -413,3 +413,35 @@ class Transformer(nn.Module):
         # pass to LM head
         output = self.linear(trg)
         return output
+
+class TransformerClassifier(torch.nn.Module):
+
+    def __init__(self, src_pad_idx, enc_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device):
+        super(TransformerClassifier, self).__init__()
+
+        self.src_pad_idx = src_pad_idx
+        self.encoder = Encoder(enc_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device)
+        self.linear = nn.Linear(d_model * max_len, 2).to(device)
+
+    def make_pad_mask(self, q, k):
+        len_q, len_k = q.size(1), k.size(1)
+
+        # batch_size x 1 x 1 x len_k
+        k = k.ne(self.src_pad_idx).unsqueeze(1).unsqueeze(2)
+        # batch_size x 1 x len_q x len_k
+        k = k.repeat(1, 1, len_q, 1)
+
+        # batch_size x 1 x len_q x 1
+        q = q.ne(self.src_pad_idx).unsqueeze(1).unsqueeze(3)
+        # batch_size x 1 x len_q x len_k
+        q = q.repeat(1, 1, 1, len_k)
+
+        mask = k & q
+        return mask
+
+    def forward(self, x):
+        mask = self.make_pad_mask(x, x)
+        x = self.encoder(x, mask)
+        x = x.view(x.shape[0], -1)
+        x = self.linear(x)
+        return x
