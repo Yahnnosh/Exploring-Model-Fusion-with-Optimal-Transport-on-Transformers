@@ -20,8 +20,16 @@ class DataLoader:
 
     def make_dataset(self, data, train_size=0.8):
 
-        data["len"] = data.iloc[:, 0].apply(len)
-        data = data[data["len"] < 256]
+        
+        data.iloc[:, 0] = data.iloc[:, 0].apply(lambda x : x.replace("<br />", " "))
+        data["len"] = data.iloc[:, 0].apply(lambda x : len(x.split()))
+        data = data[data["len"] < 128]
+        print("Tokenizing the data...")
+        data["len"] = data.iloc[:, 0].apply(lambda x : len(self.tokenize(x)))
+        data = data[data["len"] < 128]
+        
+        print("Length of the data : ", len(data))
+
         train, rem = train_test_split(data, train_size=train_size, random_state=self.seed)
         valid_size = 0.5
         valid, test = train_test_split(rem, train_size=valid_size, random_state=self.seed)

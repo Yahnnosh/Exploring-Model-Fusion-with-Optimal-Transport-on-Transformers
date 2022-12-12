@@ -3,19 +3,24 @@ import torch
 import math
 
 
-class TokenEmbedding(nn.Embedding):
+class TokenEmbedding(nn.Module):
     """
     Token Embedding using torch.nn
     they will dense representation of word using weighted matrix
     """
 
-    def __init__(self, vocab_size, d_model):
+    def __init__(self, embedding):
         """
         class for token embedding that included positional information
         :param vocab_size: size of vocabulary
         :param d_model: dimensions of model
         """
-        super(TokenEmbedding, self).__init__(vocab_size, d_model, padding_idx=1)
+        super().__init__()
+        self.embedding = embedding
+    
+    def forward(self, tensor):
+        return self.embedding(tensor)
+
 
 class PositionalEncoding(nn.Module):
     """
@@ -64,14 +69,14 @@ class TransformerEmbedding(nn.Module):
     positional encoding can give positional information to network
     """
 
-    def __init__(self, vocab_size, d_model, max_len, drop_prob, device):
+    def __init__(self, embedding, vocab_size, d_model, max_len, drop_prob, device):
         """
         class for word embedding that included positional information
         :param vocab_size: size of vocabulary
         :param d_model: dimensions of model
         """
         super(TransformerEmbedding, self).__init__()
-        self.tok_emb = TokenEmbedding(vocab_size, d_model).to(device)
+        self.tok_emb = TokenEmbedding(embedding).to(device)
         self.pos_emb = PositionalEncoding(d_model, max_len, device=device)
         self.drop_out = nn.Dropout(p=drop_prob)
 
@@ -238,9 +243,10 @@ class EncoderLayer(nn.Module):
 
 class Encoder(nn.Module):
 
-    def __init__(self, enc_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device):
+    def __init__(self, embedding, enc_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device):
         super().__init__()
-        self.emb = TransformerEmbedding(d_model=d_model,
+        self.emb = TransformerEmbedding(embedding=embedding,
+                                        d_model=d_model,
                                         max_len=max_len,
                                         vocab_size=enc_voc_size,
                                         drop_prob=drop_prob,
@@ -334,14 +340,15 @@ class Decoder(nn.Module):
 
 class Transformer(nn.Module):
 
-    def __init__(self, src_pad_idx, trg_pad_idx, trg_sos_idx, enc_voc_size, dec_voc_size, d_model, n_head, max_len,
+    def __init__(self, src_pad_idx, trg_pad_idx, trg_sos_idx, embedding, enc_voc_size, dec_voc_size, d_model, n_head, max_len,
                  ffn_hidden, n_layers, drop_prob, device):
         super().__init__()
         self.src_pad_idx = src_pad_idx
         self.trg_pad_idx = trg_pad_idx
         self.trg_sos_idx = trg_sos_idx
         self.device = device
-        self.encoder = Encoder(d_model=d_model,
+        self.encoder = Encoder(embedding=embedding,
+                               d_model=d_model,
                                n_head=n_head,
                                max_len=max_len,
                                ffn_hidden=ffn_hidden,
@@ -395,14 +402,6 @@ class Transformer(nn.Module):
         return mask
 
 
-        self.layers = nn.ModuleList([DecoderLayer(d_model=d_model,
-                                                  ffn_hidden=ffn_hidden,
-                                                  n_head=n_head,
-                                                  drop_prob=drop_prob,
-                                                  device=device)
-                                     for _ in range(n_layers)])
-
-        self.linear = nn.Linear(d_model, dec_voc_size)
 
     def forward(self, trg, src, trg_mask, src_mask):
         trg = self.emb(trg)
@@ -416,11 +415,11 @@ class Transformer(nn.Module):
 
 class TransformerClassifier(torch.nn.Module):
 
-    def __init__(self, src_pad_idx, enc_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device):
+    def __init__(self, src_pad_idx, embedding, enc_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device):
         super(TransformerClassifier, self).__init__()
 
         self.src_pad_idx = src_pad_idx
-        self.encoder = Encoder(enc_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device)
+        self.encoder = Encoder(embedding, enc_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device)
         self.linear = nn.Linear(d_model * max_len, 2).to(device)
 
     def make_pad_mask(self, q, k):
