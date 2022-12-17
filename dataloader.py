@@ -22,11 +22,13 @@ class DataLoader:
 
         
         data.iloc[:, 0] = data.iloc[:, 0].apply(lambda x : x.replace("<br />", " "))
+        data.iloc[:, 0] = data.iloc[:, 0].apply(lambda x : x.lower())
+        
         data["len"] = data.iloc[:, 0].apply(lambda x : len(x.split()))
-        data = data[data["len"] < 128]
+        data = data[data["len"] < 256]
         print("Tokenizing the data...")
         data["len"] = data.iloc[:, 0].apply(lambda x : len(self.tokenize(x)))
-        data = data[data["len"] < 128]
+        data = data[data["len"] < 256]
         
         print("Length of the data : ", len(data))
 
