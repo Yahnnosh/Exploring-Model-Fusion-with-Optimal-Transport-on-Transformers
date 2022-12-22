@@ -6,9 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="716f67f0-f85e-4379-b52d-4415fde554de" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Models/parallel_training/history_modelA_IMDB_256.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Models/parallel_training/history_modelA_IMDB_256.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Models/parallel_training/modelA_IMDB_256" beforeDir="false" afterPath="$PROJECT_DIR$/Models/parallel_training/modelA_IMDB_256" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_fusion2.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/model_fusion2.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_fusion_CV.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/model_fusion_CV.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Semester project/imputation_comparison.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../../Semester project/imputation_comparison.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Semester project/scores_mae.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../Semester project/scores_mae.txt" afterDir="false" />
