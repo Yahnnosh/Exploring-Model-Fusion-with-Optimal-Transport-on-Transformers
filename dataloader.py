@@ -1,5 +1,4 @@
 import torch
-from torchtext.data import Field, BucketIterator
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from torchtext.vocab import build_vocab_from_iterator
