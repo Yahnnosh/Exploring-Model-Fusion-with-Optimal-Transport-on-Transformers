@@ -1,0 +1,1 @@
+{'train_loss': [0.8054015458898341], 'val_loss': [0.7101346850395203], 'train_acc': [tensor(0.4980, dtype=torch.float64)], 'val_acc': [tensor(0.5170, dtype=torch.float64)], 'learning_rate': [0.0002]}
