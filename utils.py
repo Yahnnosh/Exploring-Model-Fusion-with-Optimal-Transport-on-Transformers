@@ -169,7 +169,13 @@ def validation(model, iterator, optimizer, criterion, device):
     return val_epoch_loss / len(iterator), val_epoch_accuracy / len(iterator)
 
 
-def train(model, iterator, valid_iter, optimizer, criterion, epoch, clip, device):
+def train(model, iterator, valid_iter, optimizer, criterion, epoch, clip, device, verbose=True):
+    # If epoch == 'unrestricted': training until scheduler sets learning rate to 0
+    assert isinstance(epoch, int) or epoch == 'unrestricted', f'Invalid epoch: {epoch}'
+    if epoch == 'unrestricted':
+        epoch = int(1e6) # large enough
+        unrestricted = True
+
     # set model into training mode
     model.train()
 
@@ -179,16 +185,26 @@ def train(model, iterator, valid_iter, optimizer, criterion, epoch, clip, device
     history = {'train_loss': [],
                'val_loss': [],
                'train_acc': [],
-               'val_acc': []}
+               'val_acc': [],
+               'learning_rate': []}
 
     # training
-    for e in range(epoch):
+    for e in tqdm(range(epoch)):
+        # termination criterion (unrestricted)
+        if unrestricted and optimizer.param_groups[0]['lr'] == 0.0:
+            print(f'Training has converged after {epoch} epochs')
+
+            # print training curve
+            plot_training(history)
+
+            return history
+
         # loss, metrics for current epoch
         epoch_loss = 0
         epoch_acc = 0
 
         # batches
-        for i, batch in enumerate(tqdm(iterator)):
+        for i, batch in enumerate(iterator):
             src = batch[0]  # X
             trg = batch[1]  # y
             src, trg = torch.tensor(src).to(device), torch.tensor(trg).to(device)  # put to cpu/gpu
@@ -211,16 +227,23 @@ def train(model, iterator, valid_iter, optimizer, criterion, epoch, clip, device
         # validation
         val_loss, val_acc = validation(model, valid_iter, optimizer, criterion, device)
 
+        # update scheduler
+        scheduler.step(val_loss)
+
         # save data
         with torch.no_grad():
-            for key, value in zip(history.keys(), [epoch_loss / len(iterator), val_loss, epoch_acc, val_acc]):
+            current_lr = optimizer.param_groups[0]['lr']
+            for key, value in zip(history.keys(),
+                                  [epoch_loss / len(iterator), val_loss, epoch_acc, val_acc, current_lr]):
                 history[key].append(value)
 
         # visualization
-        print(f"Epoch: {e + 1}  Train Loss: {epoch_loss / len(iterator):.4f} \
-              Validation Loss: {val_loss:.4f} \
-              Train acc: {epoch_acc:.4f}, \
-              Val acc: {val_acc:.4f}")
+        if verbose:
+            print(f"Epoch: {e + 1}  Train Loss: {epoch_loss / len(iterator):.4f} \
+                  Validation Loss: {val_loss:.4f} \
+                  Train acc: {epoch_acc:.4f}, \
+                  Val acc: {val_acc:.4f}, \
+                  Learning Rate : {optimizer.param_groups[0]['lr'] :.4f}")
 
     # print training curve
     plot_training(history)
@@ -329,7 +352,7 @@ def linear_averaging(*linears):
 
 def vanilla_fusion(modelA, modelB, pad_idx, voc_size, embedding, device):
     # init
-    model_fusion = new_model(embedding, pad_idx, voc_size, device) # init model
+    model_fusion = new_model(embedding, pad_idx, voc_size, device)  # init model
 
     with torch.no_grad():
         # 1) encoder
@@ -490,7 +513,7 @@ def fusion(modelA, modelB, weights_nameA, weights_nameB, weightsA, weightsB, tra
 def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, fusion_ratio=0.5):
     """Fuses models A, B together using optimal transport"""
     # Initialize new model
-    model_fusion = new_model(embedding, pad_idx, voc_size, device) # init model
+    model_fusion = new_model(embedding, pad_idx, voc_size, device)  # init model
     a = fusion_ratio
 
     # Initialize fused weights dictionary
@@ -575,9 +598,9 @@ def test_fusion(modelA, modelB, model_fusion, test_iter, device):
     rects3 = ax.bar(x + width, metrics_fusion, width, label='model fusion')
 
     # number on top of bars
-    for rect in (-1, 0, 1): # for each bar
-        metric = [metrics_A, metrics_B, metrics_fusion][rect + 1] # choose values for model A, B or fusion
-        for i, x_ in enumerate(x + rect * width): # x_ is position of bar
+    for rect in (-1, 0, 1):  # for each bar
+        metric = [metrics_A, metrics_B, metrics_fusion][rect + 1]  # choose values for model A, B or fusion
+        for i, x_ in enumerate(x + rect * width):  # x_ is position of bar
             y_ = metric[i] if not isinstance(metric[i], torch.Tensor) else metric[i].numpy()
             plt.text(x=x_ - 0.3 * width, y=y_ + 0.03, s=np.round(y_, 3))
 
@@ -589,4 +612,3 @@ def test_fusion(modelA, modelB, model_fusion, test_iter, device):
     plt.ylim([0, max([max(element) for element in [metrics_A, metrics_B, metrics_fusion]]) + 0.2])
 
     plt.show()
-
