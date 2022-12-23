@@ -5,8 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="716f67f0-f85e-4379-b52d-4415fde554de" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model_fusion_CV.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/model_fusion_CV.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_fusion.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/-OLD-model_fusion.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_fusion2.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/different_seeds.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model_fusion_CV.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/-OLD-differrent_seeds_CV.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Semester project/imputation_comparison.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../../Semester project/imputation_comparison.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Semester project/scores_mae.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../Semester project/scores_mae.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../Semester project/scores_mre.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../Semester project/scores_mre.txt" afterDir="false" />
@@ -31,8 +35,15 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\jjung\OneDrive\Dokumente\ETH\MSc 3rd semester\Deep Learning\Exploring Model Fusion with Optimal Transport on Transformers" />
+    </key>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="Vcs.Log.Tabs.Properties">

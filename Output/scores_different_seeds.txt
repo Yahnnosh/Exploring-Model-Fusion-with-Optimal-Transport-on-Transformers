@@ -1,0 +1,17 @@
+\begin{table}[H]
+\centering
+\caption{Model performance (5-fold CV)}
+\begin{tabular}{lll}
+\toprule
+{} &                 Loss &            Accuracy \\
+\midrule
+\textbf{Model A                       } &        0.462 ± 0.017 &       0.828 ± 0.008 \\
+\textbf{Model B                       } &  \textbf{0.415 ± 0.011} &  \textbf{0.84 ± 0.006} \\
+\textbf{Vanilla                       } &        0.664 ± 0.222 &       0.737 ± 0.053 \\
+\textbf{Vanilla (retraining)          } &        0.452 ± 0.015 &       0.804 ± 0.008 \\
+\textbf{Optimal transport             } &        1.059 ± 0.463 &       0.646 ± 0.078 \\
+\textbf{Optimal transport (retraining)} &         0.46 ± 0.017 &        0.797 ± 0.01 \\
+\textbf{Untrained model (baseline)    } &        0.798 ± 0.125 &       0.492 ± 0.003 \\
+\bottomrule
+\end{tabular}
+\end{table}

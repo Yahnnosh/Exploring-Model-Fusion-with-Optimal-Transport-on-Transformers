@@ -1,3 +1,18 @@
+# Repository Organisation:
+- **Different seeds**:
+  - different_seeds.ipynb
+  - different_seeds_CV.ipynb
+- **Parallelized training**:
+  - TODO
+- **Different datasets (sentiment analysis)**:
+  - TODO
+- **Multilingual fusion**:
+  - TODO
+- **Different support mass functions**:
+  - TODO
+
+
+
 # Project Proposal:
 ## Exploring Model Fusion with Optimal Transport on Transformers
 
@@ -59,13 +74,11 @@ duration improvement by:
 
 After completing the previous steps, we want to try out:
 
-4. Trying different support mass distributions (default is the uniform distribu-
-   tion).
+4. Trying different support mass distributions (default is the uniform distribution).
 5. Machine translation to see how fusing decoders perform.
 
 ### 3 Evaluation
-To better understand how model fusion impacts performance and whether it re-
-sults in a reliable performance boost compared to its parent models, we run the
+To better understand how model fusion impacts performance and whether it results in a reliable performance boost compared to its parent models, we run the
 experiments multiple times. Different parent models are trained by e.g. different
 initializations or different dataset splits and then fused.
 
