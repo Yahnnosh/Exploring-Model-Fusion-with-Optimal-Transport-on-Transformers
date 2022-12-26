@@ -419,6 +419,8 @@ class TransformerClassifier(torch.nn.Module):
         super(TransformerClassifier, self).__init__()
 
         self.src_pad_idx = src_pad_idx
+        self.n_head = n_head
+        self.d_model = d_model
         self.encoder = Encoder(embedding, enc_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device)
         self.linear = nn.Linear(d_model * max_len, 2).to(device)
 
