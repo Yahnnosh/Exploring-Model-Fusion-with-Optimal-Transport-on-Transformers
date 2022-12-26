@@ -17,8 +17,6 @@ class DataLoader:
         print('dataset initializing start')
 
     def make_dataset(self, data, train_size=0.8):
-
-        
         data.iloc[:, 0] = data.iloc[:, 0].apply(lambda x : x.replace("<br />", " "))
         data.iloc[:, 0] = data.iloc[:, 0].apply(lambda x : x.lower())
         
