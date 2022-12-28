@@ -13,6 +13,7 @@ import re
 from transformers import BertTokenizer
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import ot
+from torchmetrics.classification import F1Score
 
 from dataloader import *
 from transformer import *
@@ -146,6 +147,10 @@ def validation(model, iterator, optimizer, criterion, device):
     # loss, metrics for current epoch
     val_epoch_loss = 0
     val_epoch_accuracy = 0
+    # for F1 score we don't use batches
+    labels_val = []
+    preds_val = []
+    f1_scorer = F1Score(task='binary').to(device)
 
     with torch.no_grad():  # stop graph
         # batches
@@ -161,12 +166,18 @@ def validation(model, iterator, optimizer, criterion, device):
             loss = criterion(output_reshape, trg)  # calculate loss
             agreements = torch.eq(y_pred, trg)
             accuracy = torch.mean(agreements.double())  # calculate accuracy
+            labels_val.append(trg)
+            preds_val.append(y_pred)
 
             val_epoch_loss += loss.item()
             val_epoch_accuracy += accuracy
 
+    # put to numpy
+    labels_val = torch.cat(labels_val)
+    preds_val = torch.cat(preds_val)
+
     # return mean loss w.r.t. batches
-    return val_epoch_loss / len(iterator), val_epoch_accuracy / len(iterator)
+    return val_epoch_loss / len(iterator), val_epoch_accuracy / len(iterator), f1_scorer(preds_val, labels_val)
 
 
 def train(model, iterator, valid_iter, optimizer, criterion, epoch, clip, device, termination_criterion=1e-6):
@@ -226,7 +237,7 @@ def train(model, iterator, valid_iter, optimizer, criterion, epoch, clip, device
                 optimizer.step()  # optimize model
 
             # validation
-            val_loss, val_acc = validation(model, valid_iter, optimizer, criterion, device)
+            val_loss, val_acc, f1 = validation(model, valid_iter, optimizer, criterion, device)
 
             # update scheduler
             scheduler.step(val_loss)
@@ -532,22 +543,37 @@ def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, 
         else:
             if "weight" in nameA:
                 if "encoder" in nameA:
-                    W_fusion[nameA], transport_matrix, beta = fusion(modelA, modelB, nameA, nameB, weightA, weightB,
-                                                                     transport_matrix, beta, train_iter)
+                    if "concat" not in nameA and "linear" not in nameA:
+                        # query, key and value matrices get the same transport matrix
+                        W_fusion[nameA], transport_matrix_triplet, _ = fusion(modelA, modelB, nameA, nameB, weightA, weightB,
+                                                                              transport_matrix, beta, train_iter)
+                    else:
+                        W_fusion[nameA], transport_matrix, beta = fusion(modelA, modelB, nameA, nameB, weightA, weightB,
+                                                                         transport_matrix, beta, train_iter)
                 else:
                     W_fusion[nameA] = a * weightA + (1 - a) * weightB
             elif "bias" in nameA:
                 if "encoder" in nameA:
-                    # we transport the biases the same way we transported the neurons (weight matrices)
-                    m = weightB.shape[0]
-                    beta_bias = torch.ones(m) * (1 / m)
+                    if "concat" not in nameA and "linear" not in nameA:
+                        m = weightB.shape[0]
+                        beta_bias = torch.ones(m) * (1 / m)
 
-                    W_A_bias = weightA.reshape(m, 1)
+                        W_A_bias = weightA.reshape(m, 1)
 
-                    aligned_bias = torch.matmul(torch.diag(1 / beta_bias), torch.matmul(transport_matrix.T, W_A_bias))
-                    aligned_bias = aligned_bias.reshape(m)
+                        aligned_bias = torch.matmul(torch.diag(1 / beta_bias), torch.matmul(transport_matrix_triplet.T, W_A_bias))
+                        aligned_bias = aligned_bias.reshape(m)
 
-                    W_fusion[nameA] = (aligned_bias + weightB) / 2
+                        W_fusion[nameA] = (aligned_bias + weightB) / 2
+                    else:
+                        m = weightB.shape[0]
+                        beta_bias = torch.ones(m) * (1 / m)
+
+                        W_A_bias = weightA.reshape(m, 1)
+
+                        aligned_bias = torch.matmul(torch.diag(1 / beta_bias), torch.matmul(transport_matrix.T, W_A_bias))
+                        aligned_bias = aligned_bias.reshape(m)
+
+                        W_fusion[nameA] = (aligned_bias + weightB) / 2
                 else:
                     W_fusion[nameA] = a * weightA + (1 - a) * weightB
             else:
