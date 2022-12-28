@@ -237,7 +237,7 @@ def train(model, iterator, valid_iter, optimizer, criterion, epoch, clip, device
                 optimizer.step()  # optimize model
 
             # validation
-            val_loss, val_acc = validation(model, valid_iter, optimizer, criterion, device)
+            val_loss, val_acc, f1 = validation(model, valid_iter, optimizer, criterion, device)
 
             # update scheduler
             scheduler.step(val_loss)

@@ -5,12 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="716f67f0-f85e-4379-b52d-4415fde554de" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Output/scores_different_seeds.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Output/scores_different_seeds_(different transport matrices for Q,K,V).txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/different_seeds_CV.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/different_seeds_CV.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Semester project/CNN.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../../Semester project/CNN.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

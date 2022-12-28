@@ -1,0 +1,16 @@
+\begin{table}[H]
+\centering
+\caption{Model performance (5-fold CV)}
+\begin{tabular}{llll}
+\toprule
+{} &                 Loss &             Accuracy &            F1 score \\
+\midrule
+\textbf{Model A                                    } &         0.47 ± 0.021 &        0.821 ± 0.013 &       0.821 ± 0.013 \\
+\textbf{Model B                                    } &  \textbf{0.433 ± 0.014} &  \textbf{0.829 ± 0.009} &  \textbf{0.83 ± 0.009} \\
+\textbf{Optimal transport + weighted fusion        } &        0.909 ± 0.454 &        0.692 ± 0.086 &       0.692 ± 0.086 \\
+\textbf{OT + weighted fusion (recalibrated)        } &         0.63 ± 0.183 &        0.711 ± 0.072 &       0.711 ± 0.072 \\
+\textbf{OT + weighted fusion (last layer retrained)} &        0.766 ± 0.423 &        0.688 ± 0.108 &       0.688 ± 0.108 \\
+\textbf{Untrained model (baseline)                 } &        0.758 ± 0.042 &        0.506 ± 0.005 &       0.506 ± 0.006 \\
+\bottomrule
+\end{tabular}
+\end{table}
