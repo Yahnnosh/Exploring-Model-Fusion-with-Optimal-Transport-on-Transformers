@@ -1,17 +1,17 @@
 \begin{table}[H]
 \centering
 \caption{Model performance (5-fold CV)}
-\begin{tabular}{lll}
+\begin{tabular}{llll}
 \toprule
-{} &                 Loss &            Accuracy \\
+{} &               Loss &             Accuracy &             F1 score \\
 \midrule
-\textbf{Model A                       } &        0.462 ± 0.017 &       0.828 ± 0.008 \\
-\textbf{Model B                       } &  \textbf{0.415 ± 0.011} &  \textbf{0.84 ± 0.006} \\
-\textbf{Vanilla                       } &        0.664 ± 0.222 &       0.737 ± 0.053 \\
-\textbf{Vanilla (retraining)          } &        0.452 ± 0.015 &       0.804 ± 0.008 \\
-\textbf{Optimal transport             } &        1.059 ± 0.463 &       0.646 ± 0.078 \\
-\textbf{Optimal transport (retraining)} &         0.46 ± 0.017 &        0.797 ± 0.01 \\
-\textbf{Untrained model (baseline)    } &        0.798 ± 0.125 &       0.492 ± 0.003 \\
+\textbf{Model A                       } &      0.466 ± 0.011 &        0.828 ± 0.007 &        0.828 ± 0.008 \\
+\textbf{Model B                       } &  \textbf{0.41 ± 0.01} &  \textbf{0.842 ± 0.006} &  \textbf{0.841 ± 0.006} \\
+\textbf{Vanilla                       } &      0.533 ± 0.042 &        0.769 ± 0.014 &         0.77 ± 0.014 \\
+\textbf{Vanilla (retraining)          } &      0.448 ± 0.015 &        0.809 ± 0.008 &        0.809 ± 0.007 \\
+\textbf{Optimal transport             } &      0.886 ± 0.419 &        0.701 ± 0.091 &        0.702 ± 0.091 \\
+\textbf{Optimal transport (retraining)} &      0.439 ± 0.002 &        0.813 ± 0.005 &        0.814 ± 0.005 \\
+\textbf{Untrained model (baseline)    } &      0.727 ± 0.001 &        0.501 ± 0.005 &        0.501 ± 0.004 \\
 \bottomrule
 \end{tabular}
 \end{table}
