@@ -183,6 +183,7 @@ def validation(model, iterator, optimizer, criterion, device):
 def train(model, iterator, valid_iter, optimizer, criterion, epoch, clip, device, termination_criterion=1e-6):
     # If epoch == 'unrestricted': training until scheduler sets learning rate to 0
     assert isinstance(epoch, int) or epoch == 'unrestricted', f'Invalid epoch: {epoch}'
+    unrestricted = False
     if epoch == 'unrestricted':
         epoch = int(1e6) # large enough
         unrestricted = True
@@ -280,57 +281,59 @@ def train_save_best(model, iterator, valid_iter, optimizer, criterion, epoch, cl
     best_model_epoch = 0
 
     # training
-    for e in range(epoch):
-        # loss, metrics for current epoch
-        epoch_loss = 0
-        epoch_acc = 0
+    with tqdm(total=epoch) as pbar:
+        for e in range(epoch):
+            # loss, metrics for current epoch
+            epoch_loss = 0
+            epoch_acc = 0
 
-        # batches
-        for i, batch in enumerate(tqdm(iterator)):
-            src = batch[0]  # X
-            trg = batch[1]  # y
-            src, trg = torch.tensor(src).to(device), torch.tensor(trg).to(device)  # put to cpu/gpu
-            optimizer.zero_grad()  # reset optimizer
-            output = model(src)  # predict
-            y_pred = torch.argmax(output, dim=-1)  # logits -> labels
-            output_reshape = output.contiguous().view(-1, output.shape[-1])
-            trg = trg.to(torch.int64)
-            loss = criterion(output_reshape, trg)  # calculate loss
-            agreements = torch.eq(y_pred, trg)
-            accuracy = torch.mean(agreements.double())  # calculate accuracy
-            loss.backward()  # backward pass
+            # batches
+            for i, batch in enumerate(iterator):
+                src = batch[0]  # X
+                trg = batch[1]  # y
+                src, trg = torch.tensor(src).to(device), torch.tensor(trg).to(device)  # put to cpu/gpu
+                optimizer.zero_grad()  # reset optimizer
+                output = model(src)  # predict
+                y_pred = torch.argmax(output, dim=-1)  # logits -> labels
+                output_reshape = output.contiguous().view(-1, output.shape[-1])
+                trg = trg.to(torch.int64)
+                loss = criterion(output_reshape, trg)  # calculate loss
+                agreements = torch.eq(y_pred, trg)
+                accuracy = torch.mean(agreements.double())  # calculate accuracy
+                loss.backward()  # backward pass
 
-            epoch_loss += loss.item()
-            epoch_acc += accuracy / len(iterator)
+                epoch_loss += loss.item()
+                epoch_acc += accuracy / len(iterator)
 
-            torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
-            optimizer.step()  # optimize model
+                torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+                optimizer.step()  # optimize model
 
-        # validation
-        val_loss, val_acc = validation(model, valid_iter, optimizer, criterion, device)
+            # validation
+            val_loss, val_acc, f1 = validation(model, valid_iter, optimizer, criterion, device)
 
-        scheduler.step(val_loss)
+            scheduler.step(val_loss)
 
-        # save data
-        with torch.no_grad():
-            current_lr = optimizer.param_groups[0]['lr']
+            # save data
+            with torch.no_grad():
+                current_lr = optimizer.param_groups[0]['lr']
 
-            for key, value in zip(history.keys(),
-                                  [epoch_loss / len(iterator), val_loss, epoch_acc, val_acc, current_lr]):
-                history[key].append(value)
+                for key, value in zip(history.keys(),
+                                      [epoch_loss / len(iterator), val_loss, epoch_acc, val_acc, current_lr]):
+                    history[key].append(value)
 
-            # save best model (w.r.t validation loss)
-            if val_loss < best_model_score:
-                best_model = model.state_dict()
-                best_model_score = val_loss
-                best_model_epoch = e
+                # save best model (w.r.t validation loss)
+                if val_loss < best_model_score:
+                    best_model = model.state_dict()
+                    best_model_score = val_loss
+                    best_model_epoch = e
 
-        # visualization
-        print(f"Epoch: {e + 1}  Train Loss: {epoch_loss / len(iterator):.4f} \
-              Validation Loss: {val_loss:.4f} \
-              Train acc: {epoch_acc:.4f}, \
-              Val acc: {val_acc:.4f}, \
-              Learning Rate : {optimizer.param_groups[0]['lr'] :.4f}")
+            # visualization
+            pbar.update(1)
+            pbar.set_description(f"Epoch: {e + 1} - Train Loss: {epoch_loss / len(iterator):.4f} /"
+                                 f" Validation Loss: {val_loss:.4f} /"
+                                 f" Train acc: {epoch_acc:.4f} /"
+                                 f" Val acc: {val_acc:.4f} /"
+                                 f" Learning Rate : {optimizer.param_groups[0]['lr'] :.4f}")
 
     # print training curve
     plot_training(history, marker=best_model_epoch)

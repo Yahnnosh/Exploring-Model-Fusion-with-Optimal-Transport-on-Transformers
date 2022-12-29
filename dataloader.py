@@ -28,9 +28,9 @@ class DataLoader:
         
         print("Length of the data : ", len(data))
 
-        train, rem = train_test_split(data, train_size=train_size, random_state=self.seed)
+        train, rem = train_test_split(data, train_size=train_size, random_state = self.seed)
         valid_size = 0.5
-        valid, test = train_test_split(rem, train_size=valid_size, random_state=self.seed)
+        valid, test = train_test_split(rem, train_size=valid_size, random_state = self.seed)
         print(train.iloc[:, 1].iloc[0])
 
         train.iloc[:, 0] = train.iloc[:, 0].apply(lambda row: re.sub("[^A-Za-z]+", " ", row)).apply(self.tokenize)
