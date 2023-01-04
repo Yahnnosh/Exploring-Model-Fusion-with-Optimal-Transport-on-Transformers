@@ -6,7 +6,6 @@ import random
 import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from torchtext.data import Field, BucketIterator
 from sklearn.model_selection import train_test_split
 from torchtext.vocab import build_vocab_from_iterator
 import re
