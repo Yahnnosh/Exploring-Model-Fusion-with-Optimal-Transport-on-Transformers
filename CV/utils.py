@@ -21,7 +21,7 @@ from transformer import *
 # IMPORT DATA
 def import_data():
     # load data
-    data = pd.read_csv("./Data/IMDB Dataset.csv", encoding='ISO-8859-1')
+    data = pd.read_csv("../Data/IMDB Dataset.csv", encoding='ISO-8859-1')
 
     # convert string label to binary (int) label (spam: 1, non-spam: 0)
     data["sentiment"] = data['sentiment'].apply(lambda x: int(x == "positive"))
