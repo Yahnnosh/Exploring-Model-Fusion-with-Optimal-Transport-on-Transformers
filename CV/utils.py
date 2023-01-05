@@ -327,7 +327,7 @@ def train(model, iterator, valid_iter, optimizer, criterion, epoch, clip, device
                 optimizer.step()  # optimize model
 
             # validation
-            val_loss, val_acc, f1 = validation(model, valid_iter, optimizer, criterion, device)
+            val_loss, val_acc, f1 = validation(model, valid_iter, criterion, device)
 
             # update scheduler
             scheduler.step(val_loss)
@@ -500,7 +500,6 @@ def vanilla_fusion(modelA, modelB, pad_idx, voc_size, embedding, device):
             model_fusion.encoder.layers[i].attention.w_concat = output_fusion
 
             # ii) layer norm 1
-            # TODO: correct?
             norm_gamma_A = modelA.encoder.layers[i].norm1.gamma
             norm_gamma_B = modelB.encoder.layers[i].norm1.gamma
 
@@ -529,7 +528,6 @@ def vanilla_fusion(modelA, modelB, pad_idx, voc_size, embedding, device):
             model_fusion.encoder.layers[i].ffn.linear2 = linear_fusion
 
             # iv) layer norm 2
-            # TODO: correct?
             norm_gamma_A = modelA.encoder.layers[i].norm2.gamma
             norm_gamma_B = modelB.encoder.layers[i].norm2.gamma
 
@@ -614,10 +612,73 @@ def fusion(modelA, modelB, weights_nameA, weights_nameB, weightsA, weightsB, tra
     return fused, transport_matrix, beta
 
 
-def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, fusion_ratio=0.5, drop_prob=0.5):
+def fusion_multihead(modelA, modelB, nameA, nameB, weightA, weightB, transport_matrix, beta, train_iter):
+    head = modelA.n_head
+
+    support_y = weightB
+    support_x = weightA
+    # Get the weights at layer "idx" from the first model
+    W_A = weightA
+    W_B = weightB
+    # Initialize the fused model and transport matrix
+    fused = torch.empty(W_B.shape)
+    transport_matrix_new = torch.zeros((weightA.shape[0], weightB.shape[0]))
+    stride = weightB.shape[0] // head
+    for i in range(0, weightB.shape[0], stride):
+        # Align the weights from the first model
+        aligned_W = torch.matmul(W_A[i:i+stride, :], torch.matmul(transport_matrix, torch.diag(1 / beta)))
+        # Get the X-Support
+        n = W_A.shape[0] // head
+        alpha = torch.ones(n) * (1/n)
+        # Calculate the euclidean distance between the supports
+        distance = ot.dist(support_x[i:i+stride, :], support_y[i:i+stride, :])
+        # Calculate beta
+        m = W_B.shape[0] // head
+        beta_new = torch.ones(m) * (1/m)
+        # Calculate the transport matrix using optimal transport
+        transport_matrix_new[i:i+stride, i:i+stride] = torch.from_numpy(ot.emd(alpha.numpy(), beta_new.numpy(), distance.detach().numpy())).float().reshape((n, m))
+        # Align model neurons
+        aligned_model = torch.matmul(torch.diag(1 / beta_new), torch.matmul(transport_matrix_new[i:i+stride, i:i+stride].T, aligned_W))
+        # Get the weights at layer "idx" from the second model
+        fused[i:i+stride, :] = (aligned_model + W_B[i:i+stride, :]) / 2
+    return fused, transport_matrix_new, beta_new
+
+
+def fusion_crossmultihead(modelA, modelB, nameA, nameB, weightA, weightB, transport_matrix, beta, train_iter):
+    head = modelA.n_head
+
+    W_A_head = weightA.view(head, -1)
+    W_B_head = weightB.view(head, -1)
+
+    m = W_B_head.shape[1]
+    beta_head = torch.ones(m) * (1/m)
+    transport_matrix_head = torch.matmul(torch.diag(beta_head), torch.eye(m))
+
+    support_y = getSupport(modelB, train_iter, nameB, alignment="wts")
+    support_x = getSupport(modelA, train_iter, nameA, alignment="wts")
+
+    aligned_W = torch.matmul(W_A_head, torch.matmul(transport_matrix_head, torch.diag(1 / beta_head)))
+
+    dist_head = ot.dist(support_x.view(head, -1), support_y.view(head, -1))
+
+    n = W_A_head.shape[0]
+    alpha_head = torch.ones(n) * (1/n)
+
+    m = W_B_head.shape[0]
+    beta_head = torch.ones(m) * (1/m)
+
+    transport_matrix_new = torch.from_numpy(ot.emd(alpha_head.numpy(), beta_head.numpy(), dist_head.detach().numpy())).float().reshape((n, m))
+
+    aligned_W_A = torch.matmul(torch.diag(1 / beta_head), torch.matmul(transport_matrix_new.T, aligned_W))
+    aligned_W_A = aligned_W_A.view(weightA.shape)
+
+    return fusion_multihead(modelA, modelB, nameA, nameB, aligned_W_A, weightB, transport_matrix, beta, train_iter)
+
+
+def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, fusion_ratio=0.5, drop_prob=0.5, variation='standard'):
     """Fuses models A, B together using optimal transport"""
     # Initialize new model
-    model_fusion = new_model(embedding, pad_idx, voc_size, device, drop_prob=0.5)  # init model
+    model_fusion = new_model(embedding, pad_idx, voc_size, device, drop_prob=drop_prob, n_head=modelA.n_head) # init model
     a = fusion_ratio
 
     # Initialize fused weights dictionary
@@ -636,10 +697,21 @@ def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, 
             if "weight" in nameA:
                 if "encoder" in nameA:
                     if "concat" not in nameA and "linear" not in nameA:
-                        # query, key and value matrices get the same transport matrix
-                        W_fusion[nameA], transport_matrix_triplet, _ = fusion(modelA, modelB, nameA, nameB, weightA,
-                                                                              weightB,
-                                                                              transport_matrix, beta, train_iter)
+                        # select fusion function
+                        fusion_variant = lambda var: {
+                            'standard': fusion,
+                            'multihead': fusion_multihead,
+                            'cross-multihead': fusion_crossmultihead
+                        }[var]
+                        W_fusion[nameA], transport_matrix_triplet, _ = fusion_variant(variation)(modelA,
+                                                                                                 modelB,
+                                                                                                 nameA,
+                                                                                                 nameB,
+                                                                                                 weightA,
+                                                                                                 weightB,
+                                                                                                 transport_matrix,
+                                                                                                 beta,
+                                                                                                 train_iter)
                     else:
                         W_fusion[nameA], transport_matrix, beta = fusion(modelA, modelB, nameA, nameB, weightA, weightB,
                                                                          transport_matrix, beta, train_iter)
@@ -737,17 +809,17 @@ def test_fusion(modelA, modelB, model_fusion, test_iter, device):
 
 
 # wrapper function to optimize weighting factor
-def weighted_fusion(modelA, modelB, train_iter, valid_iter, embedding, pad_idx, voc_size, device):
+def weighted_fusion(modelA, modelB, train_iter, valid_iter, embedding, pad_idx, voc_size, device, variation='standard'):
     def objective(trial):
         weighting_factor = trial.suggest_float('weighting_factor', 0, 1)
 
         # weighted fusion
-        model_fusion = ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, fusion_ratio=weighting_factor)
+        model_fusion = ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, fusion_ratio=weighting_factor, variation=variation)
         model_fusion.to(device)
 
         # validate fusion model
         criterion = torch.nn.CrossEntropyLoss()
-        val_loss, val_acc, f1 = validation(model_fusion, valid_iter, None, criterion, device)
+        val_loss, val_acc, f1 = validation(model_fusion, valid_iter, criterion, device)
 
         return val_loss
     return objective
