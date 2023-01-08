@@ -166,12 +166,12 @@ def new_model(embedding, pad_idx, voc_size, device, max_len=256, d_model=16, ffn
     model = TransformerClassifier(embedding=embedding,
                                   src_pad_idx=pad_idx,
                                   enc_voc_size=voc_size,
-                                  max_len=256,
-                                  d_model=16,
-                                  ffn_hidden=32,
-                                  n_head=1,
-                                  n_layers=1,
-                                  drop_prob=0.5,
+                                  max_len=max_len,
+                                  d_model=d_model,
+                                  ffn_hidden=ffn_hidden,
+                                  n_head=n_head,
+                                  n_layers=n_layers,
+                                  drop_prob=drop_prob,
                                   device=device)
     return model.to(device)  # put on CPU/GPU
 
@@ -644,6 +644,44 @@ def fusion_multihead(modelA, modelB, nameA, nameB, weightA, weightB, transport_m
     return fused, transport_matrix_new, beta_new
 
 
+def fusion_multilayer(modelA, modelB, nameA, nameB, weightA, weightB, transport_matrix, beta, train_iter):
+    layers = modelA.layers
+    layer = int(nameA.partition("layers.")[2][0])
+
+    W_A = torch.empty((weightA.shape[0] * layers, weightA.shape[1]))
+    W_B = torch.empty((weightB.shape[0] * layers, weightB.shape[1]))
+
+    for l in range(layers):
+        W_A[l * weightB.shape[0] : l * weightB.shape[0] + weightB.shape[0], :] = modelA.state_dict()[nameA.replace(f"layers.{layer}", f"layers.{l}")]
+        W_B[l * weightB.shape[0] : l * weightB.shape[0] + weightB.shape[0], :] = modelB.state_dict()[nameA.replace(f"layers.{layer}", f"layers.{l}")]
+
+    support_y = W_B
+    support_x = W_A
+
+    # Initialize the fused model and transport matrix
+    fused = torch.empty(W_B.shape)
+    transport_matrix_new = torch.zeros((W_A.shape[0], W_B.shape[0]))
+    # Align the weights from the first model
+    aligned_W = torch.matmul(W_A, torch.matmul(transport_matrix, torch.diag(1 / beta)))
+    # Get the X-Support
+    n = W_A.shape[0]
+    alpha = torch.ones(n) * (1/n)
+    # Calculate the euclidean distance between the supports
+    distance = ot.dist(support_x, support_y)
+    # Calculate beta
+    m = W_B.shape[0]
+    beta = torch.ones(m) * (1/m)
+    # Calculate the transport matrix using optimal transport
+    transport_matrix = torch.from_numpy(ot.emd(alpha.numpy(), beta.numpy(), distance.detach().numpy())).float().reshape((n, m))
+    # Align model neurons
+    aligned_model = torch.matmul(torch.diag(1 / beta), torch.matmul(transport_matrix.T, aligned_W))
+    # Get the weights at layer "idx" from the second model
+    fused = (aligned_model + W_B) / 2
+    dim = layer * weightB.shape[0]
+    dim_to = layer * weightB.shape[0] + weightB.shape[0]
+    return fused[dim:dim_to, :], transport_matrix_new[dim:dim_to, dim:dim_to], beta
+
+
 def fusion_crossmultihead(modelA, modelB, nameA, nameB, weightA, weightB, transport_matrix, beta, train_iter):
     head = modelA.n_head
 
@@ -675,6 +713,48 @@ def fusion_crossmultihead(modelA, modelB, nameA, nameB, weightA, weightB, transp
     return fusion_multihead(modelA, modelB, nameA, nameB, aligned_W_A, weightB, transport_matrix, beta, train_iter)
 
 
+def fusion_multihead_multilayer(modelA, modelB, nameA, nameB, weightA, weightB, transport_matrix, beta, train_iter):
+    layers = modelA.layers
+    heads = modelA.n_head
+    layer = int(nameA.partition("layers.")[2][0])
+
+    W_A = torch.empty((weightA.shape[0] * layers, weightA.shape[1]))
+    W_B = torch.empty((weightB.shape[0] * layers, weightB.shape[1]))
+
+    stride = weightB.shape[0] // heads
+    for l in range(layers):
+        W_A[l * weightB.shape[0] : l * weightB.shape[0] + weightB.shape[0], :] = modelA.state_dict()[nameA.replace(f"layers.{layer}", f"layers.{l}")]
+        W_B[l * weightB.shape[0] : l * weightB.shape[0] + weightB.shape[0], :] = modelB.state_dict()[nameA.replace(f"layers.{layer}", f"layers.{l}")]
+
+    support_y = W_B
+    support_x = W_A
+
+    # Initialize the fused model and transport matrix
+    fused = torch.empty(W_B.shape)
+    transport_matrix_new = torch.zeros((W_A.shape[0], W_B.shape[0]))
+    stride = W_B.shape[0] // (heads * layers)
+    for i in range(0, W_B.shape[0], stride):
+        # Align the weights from the first model
+        aligned_W = torch.matmul(W_A[i:i+stride, :], torch.matmul(transport_matrix, torch.diag(1 / beta)))
+        # Get the X-Support
+        n = W_A.shape[0] // (heads * layers)
+        alpha = torch.ones(n) * (1/n)
+        # Calculate the euclidean distance between the supports
+        distance = ot.dist(support_x[i:i+stride, :], support_y[i:i+stride, :])
+        # Calculate beta
+        m = W_B.shape[0] // (heads * layers)
+        beta_new = torch.ones(m) * (1/m)
+        # Calculate the transport matrix using optimal transport
+        transport_matrix_new[i:i+stride, i:i+stride] = torch.from_numpy(ot.emd(alpha.numpy(), beta_new.numpy(), distance.detach().numpy())).float().reshape((n, m))
+        # Align model neurons
+        aligned_model = torch.matmul(torch.diag(1 / beta_new), torch.matmul(transport_matrix_new[i:i+stride, i:i+stride].T, aligned_W))
+        # Get the weights at layer "idx" from the second model
+        fused[i:i+stride, :] = (aligned_model + W_B[i:i+stride, :]) / 2
+    dim = layer * weightB.shape[0]
+    dim_to = layer * weightB.shape[0] + weightB.shape[0]
+    return fused[dim:dim_to, :], transport_matrix_new[dim:dim_to, dim:dim_to], beta_new
+
+
 def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, fusion_ratio=0.5, drop_prob=0.5, variation='standard'):
     """Fuses models A, B together using optimal transport"""
     # Initialize new model
@@ -701,7 +781,9 @@ def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, 
                         fusion_variant = lambda var: {
                             'standard': fusion,
                             'multihead': fusion_multihead,
-                            'cross-multihead': fusion_crossmultihead
+                            'cross-multihead': fusion_crossmultihead,
+                            'multilayer': fusion_multilayer,
+                            'multihead-multilayer': fusion_multihead_multilayer
                         }[var]
                         W_fusion[nameA], transport_matrix_triplet, _ = fusion_variant(variation)(modelA,
                                                                                                  modelB,

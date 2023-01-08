@@ -13,8 +13,6 @@
 \textbf{Optimal transport (method 1 - retraining)} &        nan ± nan &        nan ± nan &        nan ± nan \\
 \textbf{Optimal transport (method 2)             } &        nan ± nan &        nan ± nan &        nan ± nan \\
 \textbf{Optimal transport (method 2 - retraining)} &        nan ± nan &        nan ± nan &        nan ± nan \\
-\textbf{Optimal transport (method 3)             } &        nan ± nan &        nan ± nan &        nan ± nan \\
-\textbf{Optimal transport (method 3 - retraining)} &        nan ± nan &        nan ± nan &        nan ± nan \\
 \textbf{Untrained model (baseline)               } &        nan ± nan &        nan ± nan &        nan ± nan \\
 \bottomrule
 \end{tabular}
