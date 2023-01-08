@@ -448,15 +448,16 @@ def linear_averaging(*linears):
 
         device = weights[0].device
         linear_averaged = torch.nn.Linear(linears[0].in_features, linears[0].out_features, bias=True).to(device)
-        linear_averaged.weight, linear_averaged.bias = torch.nn.Parameter(weight_averaging(*weights)), \
-                                                       torch.nn.Parameter(weight_averaging(*biases))
+        linear_averaged.weight, linear_averaged.bias = torch.nn.Parameter(weight_averaging(*weights)), torch.nn.Parameter(weight_averaging(*biases))
 
     return linear_averaged
 
 
 def vanilla_fusion(modelA, modelB, pad_idx, voc_size, embedding, device):
     # init
-    model_fusion = new_model(embedding, pad_idx, voc_size, device)  # init model
+    n_layers = len(modelA.encoder.layers)
+    n_heads = modelA.n_head
+    model_fusion = new_model(embedding, pad_idx, voc_size, device, n_head=n_heads, n_layers=n_layers)  # init model
 
     with torch.no_grad():
         # 1) encoder
@@ -645,7 +646,7 @@ def fusion_multihead(modelA, modelB, nameA, nameB, weightA, weightB, transport_m
 
 
 def fusion_multilayer(modelA, modelB, nameA, nameB, weightA, weightB, transport_matrix, beta, train_iter):
-    layers = modelA.layers
+    layers = len(modelA.encoder.layers)
     layer = int(nameA.partition("layers.")[2][0])
 
     W_A = torch.empty((weightA.shape[0] * layers, weightA.shape[1]))
@@ -714,7 +715,7 @@ def fusion_crossmultihead(modelA, modelB, nameA, nameB, weightA, weightB, transp
 
 
 def fusion_multihead_multilayer(modelA, modelB, nameA, nameB, weightA, weightB, transport_matrix, beta, train_iter):
-    layers = modelA.layers
+    layers = len(modelA.encoder.layers)
     heads = modelA.n_head
     layer = int(nameA.partition("layers.")[2][0])
 
@@ -771,6 +772,8 @@ def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, 
 
     # Fusion via Optimal Transport
     for (nameA, weightA), (nameB, weightB) in zip(modelA.named_parameters(), modelB.named_parameters()):
+        weightA = weightA.to('cpu')
+        weightB = weightB.to('cpu')
         if nameA == "encoder.emb.tok_emb.embedding.weight":
             W_fusion[nameA] = weightA  # all models use same embedding
         else:
