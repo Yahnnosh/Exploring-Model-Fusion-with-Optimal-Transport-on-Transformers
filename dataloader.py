@@ -22,6 +22,7 @@ class DataLoader:
         
         data["len"] = data.iloc[:, 0].apply(lambda x : len(x.split()))
         data = data[data["len"] < 256]
+        print("Length of data after first step of preprocessing: ", len(data))
         print("Tokenizing the data...")
         data["len"] = data.iloc[:, 0].apply(lambda x : len(self.tokenize(x)))
         data = data[data["len"] < 256]
@@ -47,9 +48,12 @@ class DataLoader:
                     vocab[word] = len(vocab)
         return vocab
 
-    def make_iter(self, train, validate, test, batch_size, device):
-        vocab = self.get_vocab(train.iloc[:, 0])  # TODO: I added this line - otherwise vocab is not defined - correct?
-
+    def make_iter(self, train, validate, test, batch_size, device, vocab=None):
+        if vocab is None:
+            vocab = self.get_vocab(train.iloc[:, 0])  # TODO: I added this line - otherwise vocab is not defined - correct?
+        else:
+            vocab = vocab
+            
         print(train.iloc[0])
         train_y = torch.tensor(train.iloc[:, 1].values.astype(np.float32), device=device)
         valid_y = torch.tensor(validate.iloc[:, 1].values.astype(np.float32), device=device)
