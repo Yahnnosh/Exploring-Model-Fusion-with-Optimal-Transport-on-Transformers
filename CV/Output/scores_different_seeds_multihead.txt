@@ -1,0 +1,21 @@
+\begin{table}[H]
+\centering
+\caption{Model performance (5-fold CV)}
+\begin{tabular}{llll}
+\toprule
+{} &             Loss &         Accuracy &         F1 score \\
+\midrule
+\textbf{Model A                                  } &  \textbf{nan ± nan} &  \textbf{nan ± nan} &  \textbf{nan ± nan} \\
+\textbf{Model B                                  } &        nan ± nan &        nan ± nan &        nan ± nan \\
+\textbf{Vanilla                                  } &        nan ± nan &        nan ± nan &        nan ± nan \\
+\textbf{Vanilla (retraining)                     } &        nan ± nan &        nan ± nan &        nan ± nan \\
+\textbf{Optimal transport (method 1)             } &        nan ± nan &        nan ± nan &        nan ± nan \\
+\textbf{Optimal transport (method 1 - retraining)} &        nan ± nan &        nan ± nan &        nan ± nan \\
+\textbf{Optimal transport (method 2)             } &        nan ± nan &        nan ± nan &        nan ± nan \\
+\textbf{Optimal transport (method 2 - retraining)} &        nan ± nan &        nan ± nan &        nan ± nan \\
+\textbf{Optimal transport (method 3)             } &        nan ± nan &        nan ± nan &        nan ± nan \\
+\textbf{Optimal transport (method 3 - retraining)} &        nan ± nan &        nan ± nan &        nan ± nan \\
+\textbf{Untrained model (baseline)               } &        nan ± nan &        nan ± nan &        nan ± nan \\
+\bottomrule
+\end{tabular}
+\end{table}
