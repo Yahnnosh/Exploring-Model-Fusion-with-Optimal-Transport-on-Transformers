@@ -756,7 +756,45 @@ def fusion_multihead_multilayer(modelA, modelB, nameA, nameB, weightA, weightB, 
     return fused[dim:dim_to, :], transport_matrix_new[dim:dim_to, dim:dim_to], beta_new
 
 
-def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, fusion_ratio=0.5, drop_prob=0.5, variation='standard'):
+# different mass distribution for fusion
+def uniform_mass(n_support: int):
+    '''
+    Input
+        n_support (int): number of supports
+    '''
+    return torch.ones(n_support) * (1 / n_support)
+
+def random_mass(n_support: int):
+    '''
+    Input
+        n_support (int): number of supports
+    '''
+    action_logits = torch.rand(n_support)
+    action_probs = nn.functional.softmax(action_logits, dim=-1)
+    return action_probs
+
+def gaussian_mass(n_support: int):
+    '''
+    Normal distribution with mean 0 and std 1
+    Input
+        n_support (int): number of supports
+    '''
+    action_logits = torch.empty(n_support)
+    action_probs = nn.functional.softmax(action_logits.normal_(), dim=-1)
+    return action_probs
+
+def geometric_mass(n_support: int):
+    '''
+    Geometric distribution with success probability 0.5
+    Input
+        n_support (int): number of supports
+    '''
+    action_logits = torch.empty(n_support)
+    action_probs = nn.functional.softmax(action_logits.geometric_(0.5), dim=-1)
+    return action_probs
+
+
+def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, fusion_ratio=0.5, drop_prob=0.5, variation='standard', pmd_name='uniform'):
     """Fuses models A, B together using optimal transport"""
     # Initialize new model
     model_fusion = new_model(embedding, pad_idx, voc_size, device, drop_prob=drop_prob, n_head=modelA.n_head) # init model
@@ -767,7 +805,11 @@ def ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, 
 
     # Initialize the algorithm
     m = list(modelB.state_dict().items())[1][1].shape[1]
-    beta = torch.ones(m) * (1 / m)
+    probability_mass_distributions = lambda name: {'uniform': uniform_mass,
+                                                   'random': random_mass,
+                                                   'gaussian': gaussian_mass,
+                                                   'geometric': geometric_mass}[name]
+    beta = probability_mass_distributions(pmd_name)(m)
     transport_matrix = torch.matmul(torch.diag(beta), torch.eye(m))
 
     # Fusion via Optimal Transport
@@ -894,12 +936,12 @@ def test_fusion(modelA, modelB, model_fusion, test_iter, device):
 
 
 # wrapper function to optimize weighting factor
-def weighted_fusion(modelA, modelB, train_iter, valid_iter, embedding, pad_idx, voc_size, device, variation='standard'):
+def weighted_fusion(modelA, modelB, train_iter, valid_iter, embedding, pad_idx, voc_size, device, variation='standard', pmd_name='uniform'):
     def objective(trial):
         weighting_factor = trial.suggest_float('weighting_factor', 0, 1)
 
         # weighted fusion
-        model_fusion = ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, fusion_ratio=weighting_factor, variation=variation)
+        model_fusion = ot_fusion(modelA, modelB, train_iter, embedding, pad_idx, voc_size, device, fusion_ratio=weighting_factor, variation=variation, pmd_name=pmd_name)
         model_fusion.to(device)
 
         # validate fusion model
