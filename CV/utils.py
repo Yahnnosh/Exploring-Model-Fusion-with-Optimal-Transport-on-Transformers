@@ -229,6 +229,8 @@ def plot_training(history, marker=None):
 
 
 def validation(model, iterator, criterion, device):
+    model = model.to(device)
+
     # set model into evaluation mode
     model.eval()
 
