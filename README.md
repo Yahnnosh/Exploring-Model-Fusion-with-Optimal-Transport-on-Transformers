@@ -1,15 +1,26 @@
+# Reproduction:
+Install the necessary packages with :
+```
+$ pip install -r requirements.txt
+```
+Run Jupyter Notebook:
+```
+$ jupyter notebook
+```
 # Repository Organisation:
 - **Different seeds**:
   - different_seeds.ipynb
   - different_seeds_CV.ipynb
 - **Parallelized training**:
-  - TODO
+  - training_parallelization.ipynb
 - **Different datasets (sentiment analysis)**:
-  - TODO
+  - training_downstream.ipynb
 - **Multilingual fusion**:
-  - TODO
+  - https://colab.research.google.com/drive/12chbVk1d7XBkFPstvsdUJRiwklwPFep_?usp=sharing
+  - https://colab.research.google.com/drive/1lO_4JsqtUHCpjHLu5TR7QJ1CDYjYbC1y?usp=sharing
+  - https://colab.research.google.com/drive/1M4OgV5F_JBmjhD8Jhm_U4O7EiGR5CVv9?usp=sharing
 - **Different support mass functions**:
-  - TODO
+  - ProbMassDist_TransformerNeuronImportance.ipynb
 
 
 
