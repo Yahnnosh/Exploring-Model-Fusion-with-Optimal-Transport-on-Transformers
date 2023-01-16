@@ -272,15 +272,15 @@ class DecoderLayer(nn.Module):
     def __init__(self, d_model, ffn_hidden, n_head, drop_prob, device):
         super(DecoderLayer, self).__init__()
         self.self_attention = MultiHeadAttention(d_model=d_model, n_head=n_head, device=device)
-        self.norm1 = LayerNorm(d_model=d_model).to(device)
+        self.norm1 = LayerNorm(d_model=d_model, device=device)
         self.dropout1 = nn.Dropout(p=drop_prob)
 
         self.enc_dec_attention = MultiHeadAttention(d_model=d_model, n_head=n_head, device=device)
         self.norm2 = LayerNorm(d_model=d_model, device=device)
         self.dropout2 = nn.Dropout(p=drop_prob)
 
-        self.ffn = PositionwiseFeedForward(d_model=d_model, hidden=ffn_hidden, drop_prob=drop_prob)
-        self.norm3 = LayerNorm(d_model=d_model)
+        self.ffn = PositionwiseFeedForward(d_model=d_model, hidden=ffn_hidden, drop_prob=drop_prob, device=device)
+        self.norm3 = LayerNorm(d_model=d_model, device=device)
         self.dropout3 = nn.Dropout(p=drop_prob)
 
     def forward(self, dec, enc, trg_mask, src_mask):
@@ -311,9 +311,10 @@ class DecoderLayer(nn.Module):
         return x
 
 class Decoder(nn.Module):
-    def __init__(self, dec_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device):
+    def __init__(self, embedding, dec_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device):
         super().__init__()
-        self.emb = TransformerEmbedding(d_model=d_model,
+        self.emb = TransformerEmbedding(embedding=embedding,
+                                        d_model=d_model,
                                         drop_prob=drop_prob,
                                         max_len=max_len,
                                         vocab_size=dec_voc_size,
@@ -340,14 +341,14 @@ class Decoder(nn.Module):
 
 class Transformer(nn.Module):
 
-    def __init__(self, src_pad_idx, trg_pad_idx, trg_sos_idx, embedding, enc_voc_size, dec_voc_size, d_model, n_head, max_len,
+    def __init__(self, src_pad_idx, trg_pad_idx, trg_sos_idx, embedding_enc, embedding_dec, enc_voc_size, dec_voc_size, d_model, n_head, max_len,
                  ffn_hidden, n_layers, drop_prob, device):
         super().__init__()
         self.src_pad_idx = src_pad_idx
         self.trg_pad_idx = trg_pad_idx
         self.trg_sos_idx = trg_sos_idx
         self.device = device
-        self.encoder = Encoder(embedding=embedding,
+        self.encoder = Encoder(embedding=embedding_enc,
                                d_model=d_model,
                                n_head=n_head,
                                max_len=max_len,
@@ -357,7 +358,8 @@ class Transformer(nn.Module):
                                n_layers=n_layers,
                                device=device)
 
-        self.decoder = Decoder(d_model=d_model,
+        self.decoder = Decoder(embedding=embedding_dec,
+                               d_model=d_model,
                                n_head=n_head,
                                max_len=max_len,
                                ffn_hidden=ffn_hidden,
@@ -403,15 +405,15 @@ class Transformer(nn.Module):
 
 
 
-    def forward(self, trg, src, trg_mask, src_mask):
-        trg = self.emb(trg)
+    # def forward(self, trg, src, trg_mask, src_mask):
+    #     trg = self.emb(trg)
 
-        for layer in self.layers:
-            trg = layer(trg, src, trg_mask, src_mask)
+    #     for layer in self.layers:
+    #         trg = layer(trg, src, trg_mask, src_mask)
 
-        # pass to LM head
-        output = self.linear(trg)
-        return output
+    #     # pass to LM head
+    #     output = self.linear(trg)
+    #     return output
 
 class TransformerClassifier(torch.nn.Module):
 

@@ -6,6 +6,7 @@ import re
 import numpy as np
 from tqdm import tqdm
 from transformers import BertTokenizer
+import string
 
 
 
@@ -15,7 +16,59 @@ class DataLoader:
         self.seed = 42
         self.tokenize = tokenize
         print('dataset initializing start')
+    
+    # Split a document into sentences
+    def to_sentence(self, doc):
+        return doc.strip().split('\n')
 
+    def max_min_length(self, sentences):
+        lengths = [len(s.split()) for s in sentences]
+        return min(lengths), max(lengths)
+    
+    def load_doc(self, filename):
+        if isinstance(filename, str):
+            # open the file as read only
+            file = open(filename, mode='rt', encoding='utf-8')
+            # read all text
+            text = file.read()
+            # close the file
+            file.close()
+        elif isinstance(filename, list):
+            text = ""
+            for f in filename:
+                file = open(f, mode='rt', encoding='utf-8')
+                # read all text
+                text += file.read()
+                # close the file
+                file.close()
+        return text
+    
+    def clean_lines(self, lines):
+        cleaned = list()
+        # prepare regex for char filtering
+        re_print = re.compile('[^%s]' % re.escape(string.printable))
+        # prepare translation table for removing punctuation
+        table = str.maketrans('', '', string.punctuation)
+        # Special characters for German
+        special_char_map = {ord('ä'):'ae', ord('ü'):'ue', ord('ö'):'oe', ord('ß'):'ss'}
+        for line in lines:
+            # convert the special chars
+            line = line.translate(special_char_map)
+            # tokenize on white space
+            line = line.split()
+            # convert to lower case
+            line = [word.lower() for word in line]
+            # remove punctuation from each token
+            line = [word.translate(table) for word in line]
+            # remove non-printable chars form each token
+            line = [re_print.sub('', w) for w in line]
+            # remove tokens with numbers in them
+            line = [word for word in line if word.isalpha()]
+            # store as string
+            cleaned.append(' '.join(line))
+        return cleaned  
+    
+    
     def make_dataset(self, data, train_size=0.8):
         data.iloc[:, 0] = data.iloc[:, 0].apply(lambda x : x.replace("<br />", " "))
         data.iloc[:, 0] = data.iloc[:, 0].apply(lambda x : x.lower())
@@ -41,7 +94,7 @@ class DataLoader:
         return train, valid, test
 
     def get_vocab(self, training_corpus):
-        vocab = {'__PAD__': 0, '__</e>__': 1, '__UNK__': 2}
+        vocab = {'__PAD__': 0, '__SOS__': 1, '__UNK__': 2}
         for item in training_corpus:
             for word in item:
                 if word not in vocab:
