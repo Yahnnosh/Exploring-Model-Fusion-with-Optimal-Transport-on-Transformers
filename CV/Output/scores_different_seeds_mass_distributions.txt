@@ -1,0 +1,23 @@
+\begin{table}[H]
+\centering
+\caption{Model performance (5-fold CV)}
+\begin{tabular}{llll}
+\toprule
+{} &                 Loss &             Accuracy &             F1 score \\
+\midrule
+\textbf{Model A                                   } &         0.466 ± 0.02 &        0.828 ± 0.007 &        0.828 ± 0.007 \\
+\textbf{Model B                                   } &  \textbf{0.416 ± 0.017} &  \textbf{0.837 ± 0.005} &  \textbf{0.837 ± 0.005} \\
+\textbf{Vanilla                                   } &        1.192 ± 0.413 &        0.627 ± 0.054 &        0.627 ± 0.054 \\
+\textbf{Vanilla (retraining)                      } &         0.471 ± 0.03 &        0.797 ± 0.015 &        0.797 ± 0.015 \\
+\textbf{Optimal transport (uniform)               } &        1.239 ± 1.036 &        0.685 ± 0.105 &        0.684 ± 0.105 \\
+\textbf{Optimal transport (uniform - retraining)  } &         0.45 ± 0.026 &        0.809 ± 0.012 &        0.809 ± 0.012 \\
+\textbf{Optimal transport (random)                } &        1.243 ± 1.036 &        0.684 ± 0.105 &        0.684 ± 0.105 \\
+\textbf{Optimal transport (random - retraining)   } &        0.444 ± 0.022 &        0.813 ± 0.011 &         0.813 ± 0.01 \\
+\textbf{Optimal transport (gaussian)              } &        1.243 ± 1.043 &        0.684 ± 0.106 &        0.684 ± 0.105 \\
+\textbf{Optimal transport (gaussian - retraining) } &        0.443 ± 0.016 &        0.813 ± 0.007 &        0.813 ± 0.007 \\
+\textbf{Optimal transport (geometric)             } &        1.239 ± 1.032 &        0.685 ± 0.105 &        0.684 ± 0.105 \\
+\textbf{Optimal transport (geometric - retraining)} &        0.441 ± 0.018 &         0.815 ± 0.01 &         0.815 ± 0.01 \\
+\textbf{Untrained model (baseline)                } &        0.746 ± 0.019 &        0.494 ± 0.005 &        0.494 ± 0.005 \\
+\bottomrule
+\end{tabular}
+\end{table}
